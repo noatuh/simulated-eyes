@@ -65,6 +65,22 @@ def move_pupils_smoothly_synced():
             left_pupil_position[1] -= pupil_speed
             right_pupil_position[1] -= pupil_speed
 
+# Add a state enum to represent the different animation states
+class State:
+    CLOSED = 0
+    BLINKING = 1
+    LOOKING_SIDE_TO_SIDE = 2
+    IDLE = 3
+
+# Initialize the starting state as CLOSED
+current_state = State.CLOSED
+
+# Counter for the number of blinks during the blinking phase
+blink_count = 0
+
+# Counter for the number of side looks during the side-to-side phase
+look_count = 0
+
 blink_timer = 0
 movement_timer = 0
 blink_duration = 20
@@ -83,23 +99,64 @@ while True:
             if event.key == pygame.K_q:
                 pygame.quit()
                 sys.exit()
-    
+
     blink_timer += 1
     movement_timer += 1
-    
-    if blink_timer > 100 and blink_timer < (100 + blink_duration):
-        pass
-    else:
+
+    # Handle the animation based on the current state
+    if current_state == State.CLOSED:
+        if blink_timer > 60:  # 1 second delay
+            current_state = State.BLINKING
+            blink_timer = 0
+
+    elif current_state == State.BLINKING:
+        if blink_timer < 10 or (blink_timer > 20 and blink_timer < 30):
+            pass
+        else:
+            draw_eyes()
+
+        if blink_timer > 60:  # Completed one blink cycle
+            blink_timer = 0
+            blink_count += 1
+            if blink_count >= 3:  # Transition after 3 blinks
+                current_state = State.LOOKING_SIDE_TO_SIDE
+
+    elif current_state == State.LOOKING_SIDE_TO_SIDE:
         draw_eyes()
-    
-    if movement_timer > movement_duration:
-        set_new_target_synced()
-        movement_timer = 0
-    
-    move_pupils_smoothly_synced()
-    
-    if blink_timer > 200:
-        blink_timer = 0
-    
+
+        if look_count == 0:
+            left_pupil_position[0] -= pupil_speed
+            right_pupil_position[0] -= pupil_speed
+            if left_pupil_position[0] <= screen_width // 4 - eye_width // 2 + pupil_radius:
+                look_count += 1
+        elif look_count == 1:
+            left_pupil_position[0] += pupil_speed
+            right_pupil_position[0] += pupil_speed
+            if left_pupil_position[0] >= screen_width // 4 + eye_width // 2 - pupil_radius:
+                look_count += 1
+        elif look_count == 2:
+            left_pupil_position[0] -= pupil_speed
+            right_pupil_position[0] -= pupil_speed
+            if left_pupil_position[0] <= screen_width // 4:
+                look_count += 1
+                current_state = State.IDLE  # Transition to IDLE state
+
+    elif current_state == State.IDLE:
+        if blink_timer > 100 and blink_timer < (100 + blink_duration):
+            pass
+        else:
+            draw_eyes()
+
+        if movement_timer > movement_duration:
+            set_new_target_synced()
+            movement_timer = 0
+
+        move_pupils_smoothly_synced()
+
+        if blink_timer > 200:
+            blink_timer = 0
+
     pygame.display.flip()
     clock.tick(60)
+
+# Note: Run this code in a local environment with pygame installed.
