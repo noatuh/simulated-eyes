@@ -158,5 +158,3 @@ while True:
 
     pygame.display.flip()
     clock.tick(60)
-
-# Note: Run this code in a local environment with pygame installed.
