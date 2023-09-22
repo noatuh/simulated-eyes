@@ -91,3 +91,4 @@ while True:
     if eyes_open:
         draw_eyes()
     pygame.display.flip()
+ 
